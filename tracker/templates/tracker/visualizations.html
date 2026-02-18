@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Visualizations | Personal Finance{% endblock %}
+
+{% block content %}
+<section class="viz-hero mb-4">
+    <div class="viz-hero-glow viz-hero-glow-a"></div>
+    <div class="viz-hero-glow viz-hero-glow-b"></div>
+    <div class="viz-hero-content">
+        <div>
+            <span class="page-eyebrow">Immersive Analytics</span>
+            <h1 class="page-title text-white mb-2">Visualizations</h1>
+            <p class="viz-hero-subtitle mb-0">A live visual command center for your cash flow, category concentration, and account-level risk.</p>
+        </div>
+        <form method="get" class="viz-filter-panel">
+            <select name="period" class="form-select">
+                <option value="30d" {% if period == "30d" %}selected{% endif %}>Last 30 days</option>
+                <option value="90d" {% if period == "90d" %}selected{% endif %}>Last 90 days</option>
+                <option value="180d" {% if period == "180d" %}selected{% endif %}>Last 180 days</option>
+                <option value="365d" {% if period == "365d" %}selected{% endif %}>Last 12 months</option>
+                <option value="730d" {% if period == "730d" %}selected{% endif %}>Last 24 months</option>
+                <option value="all" {% if period == "all" %}selected{% endif %}>All time</option>
+            </select>
+            <select name="account" class="form-select">
+                <option value="all" {% if account_filter == "all" %}selected{% endif %}>All accounts</option>
+                {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if account_filter == account.id|stringformat:"s" %}selected{% endif %}>{{ account.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-light">Render</button>
+        </form>
+    </div>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="card viz-stat-card h-100">
+            <div class="card-body">
+                <p class="metric-label mb-1">Income</p>
+                <p class="viz-stat-value viz-stat-income mb-0">${{ total_income|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card viz-stat-card h-100">
+            <div class="card-body">
+                <p class="metric-label mb-1">Expenses</p>
+                <p class="viz-stat-value viz-stat-expense mb-0">${{ total_expenses|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card viz-stat-card h-100">
+            <div class="card-body">
+                <p class="metric-label mb-1">Net Balance</p>
+                <p class="viz-stat-value {% if net_balance >= 0 %}viz-stat-net-positive{% else %}viz-stat-net-negative{% endif %} mb-0">${{ net_balance|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card viz-stat-card h-100">
+            <div class="card-body">
+                <p class="metric-label mb-1">Avg Daily Spend</p>
+                <p class="viz-stat-value viz-stat-neutral mb-0">${{ avg_daily_expense|floatformat:2 }}</p>
+                <small class="text-muted">Savings rate: {{ savings_rate|floatformat:1 }}%</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card viz-card-dark h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="panel-title text-white mb-0">Cash Flow Pulse</h2>
+                    <span class="badge viz-badge-soft">Income vs Expense vs Net</span>
+                </div>
+                <canvas id="viz-monthly-canvas" class="analytics-canvas" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card viz-card-dark h-100">
+            <div class="card-body">
+                <h2 class="panel-title text-white">Category Orbit</h2>
+                <canvas id="viz-category-canvas" class="analytics-canvas" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Spending Heatmap (Last 20 Weeks)</h2>
+                <canvas id="viz-heatmap-canvas" class="analytics-canvas" height="210"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Account Distribution</h2>
+                <canvas id="viz-account-canvas" class="analytics-canvas" height="210"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Weekday Spending Rhythm</h2>
+                <canvas id="viz-weekday-canvas" class="analytics-canvas" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Top Expense Merchants</h2>
+                <div class="viz-list">
+                    {% for merchant in top_merchants %}
+                        <div class="viz-list-item">
+                            <div>
+                                <div class="viz-list-title">{{ merchant.title|truncatechars:55 }}</div>
+                                <small class="text-muted">{{ merchant.count }} transaction{{ merchant.count|pluralize }}</small>
+                            </div>
+                            <strong>${{ merchant.total_f|floatformat:2 }}</strong>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mb-0">No expense transactions in this range.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="panel-title mb-3">Largest Expense Transactions</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Account</th>
+                        <th class="text-end">Date</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in top_transactions %}
+                        <tr>
+                            <td>{{ tx.title }}</td>
+                            <td>{{ tx.category }}</td>
+                            <td>{{ tx.account.name|default:"Unassigned" }}</td>
+                            <td class="text-end">{{ tx.date|date:"M d, Y" }}</td>
+                            <td class="text-end fw-semibold">${{ tx.amount|floatformat:2 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No expense transactions in this range.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{ viz_data|json_script:"visualization-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/visualizations.js' %}"></script>
+{% endblock %}

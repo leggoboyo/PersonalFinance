@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Import History | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <span class="page-eyebrow">Audit</span>
+        <h1 class="page-title">Import History</h1>
+        <p class="page-subtitle">Track every import and duplicate statement block.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'import_pdf' %}" class="btn btn-outline-dark">Import PDF</a>
+        <a href="{% url 'import_csv' %}" class="btn btn-outline-dark">Import CSV</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Imported At</th>
+                    <th>Source</th>
+                    <th>Status</th>
+                    <th>File</th>
+                    <th>Account</th>
+                    <th class="text-end">Detected</th>
+                    <th class="text-end">Imported</th>
+                    <th class="text-end">Skipped</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in imports %}
+                    <tr>
+                        <td>{{ item.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ item.source_type }}</td>
+                        <td>
+                            {% if item.status == "IMPORTED" %}
+                                <span class="badge text-bg-success">Imported</span>
+                            {% else %}
+                                <span class="badge text-bg-warning">Blocked Duplicate</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.filename|truncatechars:48 }}</td>
+                        <td>{{ item.account.name|default:"-" }}</td>
+                        <td class="text-end">{{ item.rows_detected }}</td>
+                        <td class="text-end">{{ item.rows_imported }}</td>
+                        <td class="text-end">{{ item.rows_skipped }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4"><div class="empty-state">No import history yet.</div></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if imports.paginator.num_pages > 1 %}
+<nav class="mt-3" aria-label="Import history pagination">
+    <ul class="pagination">
+        <li class="page-item {% if not imports.has_previous %}disabled{% endif %}">
+            {% if imports.has_previous %}
+                <a class="page-link" href="?page=1">First</a>
+            {% else %}
+                <span class="page-link">First</span>
+            {% endif %}
+        </li>
+        <li class="page-item {% if not imports.has_previous %}disabled{% endif %}">
+            {% if imports.has_previous %}
+                <a class="page-link" href="?page={{ imports.previous_page_number }}">Previous</a>
+            {% else %}
+                <span class="page-link">Previous</span>
+            {% endif %}
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ imports.number }} of {{ imports.paginator.num_pages }}</span>
+        </li>
+        <li class="page-item {% if not imports.has_next %}disabled{% endif %}">
+            {% if imports.has_next %}
+                <a class="page-link" href="?page={{ imports.next_page_number }}">Next</a>
+            {% else %}
+                <span class="page-link">Next</span>
+            {% endif %}
+        </li>
+        <li class="page-item {% if not imports.has_next %}disabled{% endif %}">
+            {% if imports.has_next %}
+                <a class="page-link" href="?page={{ imports.paginator.num_pages }}">Last</a>
+            {% else %}
+                <span class="page-link">Last</span>
+            {% endif %}
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

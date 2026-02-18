@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Reports | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <span class="page-eyebrow">Diagnostics</span>
+        <h1 class="page-title">Spending Reports</h1>
+        <p class="page-subtitle">Detailed tables and recommendations for planning your next month.</p>
+    </div>
+    <form method="get" class="page-actions">
+        <select name="period" class="form-select">
+            <option value="30d" {% if period == "30d" %}selected{% endif %}>Last 30 days</option>
+            <option value="90d" {% if period == "90d" %}selected{% endif %}>Last 90 days</option>
+            <option value="365d" {% if period == "365d" %}selected{% endif %}>Last 12 months</option>
+            <option value="all" {% if period == "all" %}selected{% endif %}>All time</option>
+        </select>
+        <select name="account" class="form-select">
+            <option value="all" {% if account_filter == "all" %}selected{% endif %}>All accounts</option>
+            {% for account in user_accounts %}
+                <option value="{{ account.id }}" {% if account_filter == account.id|stringformat:"s" %}selected{% endif %}>
+                    {{ account.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-dark">Apply</button>
+    </form>
+</div>
+{% if selected_account %}
+    <p class="text-muted mb-4">Filtered account: {{ selected_account.name }}</p>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Income</h2>
+                <p class="metric-value text-success">${{ total_income|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Expenses</h2>
+                <p class="metric-value text-danger">${{ total_expenses|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Net</h2>
+                <p class="metric-value {% if net_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">${{ net_balance|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Savings Rate</h2>
+                <p class="metric-value {% if savings_rate >= 20 %}text-success{% elif savings_rate < 10 %}text-danger{% else %}text-warning{% endif %}">
+                    {{ savings_rate|floatformat:1 }}%
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Essential Spending</h2>
+                <p class="metric-value">${{ essential_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Discretionary Spending</h2>
+                <p class="metric-value">${{ discretionary_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Suggested Monthly Cut</h2>
+                <p class="metric-value {% if monthly_expense_target > 0 %}text-danger{% else %}text-success{% endif %}">
+                    ${{ monthly_expense_target|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="panel-title">Actionable Insights</h2>
+        <ul class="mb-0 list-tight">
+            {% for insight in insights %}
+                <li>{{ insight }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Top Expense Categories</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">% of Spend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in expense_breakdown %}
+                                <tr>
+                                    <td>{{ row.category }}</td>
+                                    <td class="text-end">${{ row.total|floatformat:2 }}</td>
+                                    <td class="text-end">{{ row.percentage|floatformat:1 }}%</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center">No expense data.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Expense by Account</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Account</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">% of Spend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in account_breakdown %}
+                                <tr>
+                                    <td>{{ row.account_name }}</td>
+                                    <td class="text-end">${{ row.total|floatformat:2 }}</td>
+                                    <td class="text-end">{{ row.percentage|floatformat:1 }}%</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center">No account-level spend data.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">6-Month Cash Flow Trend</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th class="text-end">Income</th>
+                                <th class="text-end">Expenses</th>
+                                <th class="text-end">Net</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in month_rows %}
+                                <tr>
+                                    <td>{{ row.month }}</td>
+                                    <td class="text-end text-success">${{ row.income|floatformat:2 }}</td>
+                                    <td class="text-end text-danger">${{ row.expenses|floatformat:2 }}</td>
+                                    <td class="text-end {% if row.net >= 0 %}text-primary{% else %}text-danger{% endif %}">${{ row.net|floatformat:2 }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="4" class="text-muted text-center">No monthly data.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Recurring Expense Candidates</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th class="text-end">Months</th>
+                                <th class="text-end">Avg Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in recurring_expenses %}
+                                <tr>
+                                    <td>{{ row.title }}</td>
+                                    <td class="text-end">{{ row.months_count }}</td>
+                                    <td class="text-end">${{ row.average_amount|floatformat:2 }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center">Need at least 3 months of similar transactions.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-12">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Top Merchants by Spend</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Merchant / Description</th>
+                                <th class="text-end">Transactions</th>
+                                <th class="text-end">Total Spend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in merchant_breakdown %}
+                                <tr>
+                                    <td>{{ row.title }}</td>
+                                    <td class="text-end">{{ row.count }}</td>
+                                    <td class="text-end">${{ row.total|floatformat:2 }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center">No merchant data.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Import PDF | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="page-header">
+            <div class="page-title-wrap">
+                <span class="page-eyebrow">Ingestion</span>
+                <h1 class="page-title">Import Monthly Statement (PDF)</h1>
+                <p class="page-subtitle">Upload statement PDFs and review extracted rows before final import.</p>
+            </div>
+            <div class="page-actions">
+                <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">Back to Transactions</a>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3 {% if field.name == 'allow_duplicate_statement' %}form-check{% endif %}">
+                            {% if field.name == "allow_duplicate_statement" %}
+                                {{ field }}
+                                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {% else %}
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                            {% endif %}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Extract Transactions</button>
+                    <a href="{% url 'import_csv' %}" class="btn btn-link">Need CSV import instead?</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="panel-title">Workflow</h2>
+                <ol class="mb-0 list-tight">
+                    <li>Upload one account statement PDF.</li>
+                    <li>Review the extracted rows (paged for large statements).</li>
+                    <li>Edit or uncheck rows, then confirm import.</li>
+                </ol>
+                <p class="text-muted small mt-3 mb-0">For scanned/image-only PDFs, extraction quality depends on local OCR tooling.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

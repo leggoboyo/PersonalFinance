@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <span class="page-eyebrow">Ledger</span>
+        <h1 class="page-title">Transactions</h1>
+        <p class="page-subtitle">Filter and maintain your income and expense records.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'import_pdf' %}" class="btn btn-outline-dark">Import PDF</a>
+        <a href="{% url 'import_csv' %}" class="btn btn-outline-dark">Import CSV</a>
+        <a href="{% url 'expense_create' %}" class="btn btn-primary">Add Transaction</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Search Title</label>
+                <input type="text" name="q" class="form-control" value="{{ filters.q }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Type</label>
+                <select name="transaction_type" class="form-select">
+                    <option value="">All</option>
+                    <option value="INCOME" {% if filters.transaction_type == "INCOME" %}selected{% endif %}>Income</option>
+                    <option value="EXPENSE" {% if filters.transaction_type == "EXPENSE" %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Account</label>
+                <select name="account" class="form-select">
+                    <option value="">All</option>
+                    {% for account in accounts %}
+                        <option value="{{ account.id }}" {% if filters.account == account.id|stringformat:"s" %}selected{% endif %}>
+                            {{ account.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
+                <input type="text" name="category" class="form-control" value="{{ filters.category }}">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">From</label>
+                <input type="date" name="start_date" class="form-control" value="{{ filters.start_date }}">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">To</label>
+                <input type="date" name="end_date" class="form-control" value="{{ filters.end_date }}">
+            </div>
+            <div class="col-md-1 d-flex gap-2">
+                <button type="submit" class="btn btn-dark w-100">Filter</button>
+            </div>
+            <div class="col-12">
+                <a href="{% url 'expense_list' %}" class="btn btn-link px-0">Reset filters</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Account</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th class="text-end">Amount</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.title }}</td>
+                        <td>{{ expense.category }}</td>
+                        <td>{{ expense.account.name|default:"-" }}</td>
+                        <td>
+                            {% if expense.transaction_type == "INCOME" %}
+                                <span class="badge text-bg-success">Income</span>
+                            {% else %}
+                                <span class="badge text-bg-danger">Expense</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ expense.date }}</td>
+                        <td class="text-end">${{ expense.amount|floatformat:2 }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'expense_update' expense.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <a href="{% url 'expense_delete' expense.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4"><div class="empty-state">No transactions yet.</div></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if expenses.paginator.num_pages > 1 %}
+    <nav class="mt-3" aria-label="Transactions pagination">
+        <ul class="pagination">
+            <li class="page-item {% if not expenses.has_previous %}disabled{% endif %}">
+                {% if expenses.has_previous %}
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page=1">First</a>
+                {% else %}
+                    <span class="page-link">First</span>
+                {% endif %}
+            </li>
+            <li class="page-item {% if not expenses.has_previous %}disabled{% endif %}">
+                {% if expenses.has_previous %}
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ expenses.previous_page_number }}">Previous</a>
+                {% else %}
+                    <span class="page-link">Previous</span>
+                {% endif %}
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ expenses.number }} of {{ expenses.paginator.num_pages }}</span>
+            </li>
+            <li class="page-item {% if not expenses.has_next %}disabled{% endif %}">
+                {% if expenses.has_next %}
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ expenses.next_page_number }}">Next</a>
+                {% else %}
+                    <span class="page-link">Next</span>
+                {% endif %}
+            </li>
+            <li class="page-item {% if not expenses.has_next %}disabled{% endif %}">
+                {% if expenses.has_next %}
+                    <a class="page-link" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ expenses.paginator.num_pages }}">Last</a>
+                {% else %}
+                    <span class="page-link">Last</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

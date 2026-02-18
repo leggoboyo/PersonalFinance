@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Register | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="page-header mb-3">
+            <div class="page-title-wrap">
+                <span class="page-eyebrow">Onboarding</span>
+                <h1 class="page-title">Create Account</h1>
+                <p class="page-subtitle">Create your secure local account to track and analyze spending.</p>
+            </div>
+        </div>
+        <div class="card auth-card">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text|safe }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100">Create account</button>
+                </form>
+                <p class="small mt-3 mb-0">
+                    Already have an account? <a href="{% url 'login' %}">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

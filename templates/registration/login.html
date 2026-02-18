@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="page-header mb-3">
+            <div class="page-title-wrap">
+                <span class="page-eyebrow">Access</span>
+                <h1 class="page-title">Login</h1>
+                <p class="page-subtitle">Sign in to view your local finance data and reports.</p>
+            </div>
+        </div>
+        <div class="card auth-card">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ form.non_field_errors|striptags }}
+                        </div>
+                    {% endif %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+                <p class="small text-muted mt-3 mb-0">
+                    Use your account username here (not your email unless your username is your email).
+                </p>
+                <p class="small mt-3 mb-0">
+                    New here? <a href="{% url 'register' %}">Create an account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

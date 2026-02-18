@@ -1,0 +1,5 @@
+date,title,amount,category,transaction_type,account
+2026-01-01,Paycheck,4000,Income,INCOME,Main Checking
+2026-01-03,Rent,-1400,Housing,EXPENSE,Main Checking
+2026-01-05,Grocery Store,-125.67,Food,EXPENSE,Main Checking
+2026-01-10,Credit Card Payment,-300,Credit Card,EXPENSE,Visa Platinum

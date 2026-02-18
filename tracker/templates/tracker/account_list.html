@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <span class="page-eyebrow">Structure</span>
+        <h1 class="page-title">Accounts</h1>
+        <p class="page-subtitle">Maintain every account that feeds your statement imports.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'account_create' %}" class="btn btn-primary">Add Account</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Institution</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                    <tr>
+                        <td>{{ account.name }}</td>
+                        <td>{{ account.institution|default:"-" }}</td>
+                        <td>{{ account.get_account_type_display }}</td>
+                        <td>
+                            {% if account.is_active %}
+                                <span class="badge text-bg-success">Active</span>
+                            {% else %}
+                                <span class="badge text-bg-secondary">Archived</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'account_update' account.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4"><div class="empty-state">No accounts yet. Add your checking, credit card, mortgage, and loan accounts first.</div></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Analytics | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <span class="page-eyebrow">Single Pane</span>
+        <h1 class="page-title">Financial Analytics</h1>
+        <p class="page-subtitle">Trend, category concentration, and import health from one screen.</p>
+    </div>
+    <form method="get" class="page-actions">
+        <select name="period" class="form-select">
+            <option value="30d" {% if period == "30d" %}selected{% endif %}>Last 30 days</option>
+            <option value="90d" {% if period == "90d" %}selected{% endif %}>Last 90 days</option>
+            <option value="180d" {% if period == "180d" %}selected{% endif %}>Last 180 days</option>
+            <option value="365d" {% if period == "365d" %}selected{% endif %}>Last 12 months</option>
+            <option value="all" {% if period == "all" %}selected{% endif %}>All time</option>
+        </select>
+        <select name="account" class="form-select">
+            <option value="all" {% if account_filter == "all" %}selected{% endif %}>All accounts</option>
+            {% for account in accounts %}
+                <option value="{{ account.id }}" {% if account_filter == account.id|stringformat:"s" %}selected{% endif %}>{{ account.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-dark">Apply</button>
+    </form>
+</div>
+
+{% if selected_account %}
+    <p class="text-muted mb-4">Filtered account: {{ selected_account.name }}</p>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Income</h2>
+                <p class="metric-value text-success">${{ total_income|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Expenses</h2>
+                <p class="metric-value text-danger">${{ total_expenses|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Net</h2>
+                <p class="metric-value {% if net_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">${{ net_balance|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Savings Rate</h2>
+                <p class="metric-value {% if savings_rate >= 20 %}text-success{% elif savings_rate < 10 %}text-danger{% else %}text-warning{% endif %}">{{ savings_rate|floatformat:1 }}%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Cash Flow Trend</h2>
+                <canvas id="cashflow-chart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Top Categories</h2>
+                <canvas id="category-chart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Operational Snapshot</h2>
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <th>Total Transactions</th>
+                            <td class="text-end">{{ transaction_count }}</td>
+                        </tr>
+                        <tr>
+                            <th>Average Expense</th>
+                            <td class="text-end">${{ average_transaction|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Recent Imports (Imported)</th>
+                            <td class="text-end">{{ imported_count }}</td>
+                        </tr>
+                        <tr>
+                            <th>Recent Duplicate Blocks</th>
+                            <td class="text-end">{{ blocked_count }}</td>
+                        </tr>
+                        <tr>
+                            <th>Largest Expense</th>
+                            <td class="text-end">
+                                {% if largest_expense %}
+                                    {{ largest_expense.title|truncatechars:32 }} (${{ largest_expense.amount|floatformat:2 }})
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="panel-title mb-0">Recent Import Activity</h2>
+                    <a href="{% url 'import_history' %}" class="btn btn-sm btn-outline-dark">Full History</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>File</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in recent_imports %}
+                                <tr>
+                                    <td>{{ entry.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ entry.filename|truncatechars:36 }}</td>
+                                    <td>
+                                        {% if entry.status == "IMPORTED" %}
+                                            <span class="badge text-bg-success">Imported</span>
+                                        {% else %}
+                                            <span class="badge text-bg-warning">Blocked Duplicate</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center">No imports yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ trend_data|json_script:"trend-data" }}
+{{ category_data|json_script:"category-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/analytics.js' %}"></script>
+{% endblock %}

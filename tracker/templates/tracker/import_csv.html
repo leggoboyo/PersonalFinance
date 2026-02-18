@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Import CSV | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="page-header">
+            <div class="page-title-wrap">
+                <span class="page-eyebrow">Ingestion</span>
+                <h1 class="page-title">Import Monthly Statement (CSV)</h1>
+                <p class="page-subtitle">Use CSV imports for institutions that export clean tabular statement data.</p>
+            </div>
+            <div class="page-actions">
+                <a href="{% url 'import_pdf' %}" class="btn btn-outline-dark">Use PDF Import</a>
+                <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">Back to Transactions</a>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3 {% if field.name == 'has_header' or field.name == 'allow_duplicate_statement' %}form-check{% endif %}">
+                            {% if field.name == "has_header" or field.name == "allow_duplicate_statement" %}
+                                {{ field }}
+                                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {% else %}
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                            {% endif %}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Import Transactions</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="panel-title">CSV Format Example</h2>
+                <pre class="small mb-0">date,title,amount,category,transaction_type,account
+2026-01-05,Salary,4000,Income,INCOME,Checking
+2026-01-06,Mortgage Payment,-1650,Housing,EXPENSE,Mortgage
+2026-01-07,Grocery Store,-124.50,Food,EXPENSE,Checking</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

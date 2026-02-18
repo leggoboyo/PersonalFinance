@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <span class="page-eyebrow">Overview</span>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Your current financial position and latest transaction activity.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'analytics_hub' %}" class="btn btn-outline-dark">Analytics Hub</a>
+        <a href="{% url 'expense_create' %}" class="btn btn-primary">Add Transaction</a>
+        <a href="{% url 'reports' %}" class="btn btn-outline-dark">View Reports</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Total Income</h2>
+                <p class="metric-value text-success">${{ total_income|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Total Expenses</h2>
+                <p class="metric-value text-danger">${{ total_expenses|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h2 class="metric-label">Net Balance</h2>
+                <p class="metric-value {% if net_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                    ${{ net_balance|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="mb-0">
+            Use <a href="{% url 'expense_list' %}">Transactions</a> for manual edits and
+            <a href="{% url 'import_pdf' %}">Import PDF</a> for your monthly statement workflow.
+        </p>
+    </div>
+</div>
+
+<div class="row g-3 mt-1 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Import New Statement</h2>
+                <p class="text-muted mb-3">Upload this month's PDF and review extracted entries before saving.</p>
+                <a href="{% url 'import_pdf' %}" class="btn btn-outline-dark btn-sm">Start Import</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Review Trends</h2>
+                <p class="text-muted mb-3">See cash flow and category concentration in one visual workspace.</p>
+                <a href="{% url 'analytics_hub' %}" class="btn btn-outline-dark btn-sm">Open Analytics</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="panel-title">Audit Imports</h2>
+                <p class="text-muted mb-3">Track imported files and duplicate blocks to avoid data drift.</p>
+                <a href="{% url 'import_history' %}" class="btn btn-outline-dark btn-sm">View History</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h2 class="panel-title">Recent Transactions</h2>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in recent_expenses %}
+                        <tr>
+                            <td>{{ item.title }}</td>
+                            <td>
+                                {% if item.transaction_type == "INCOME" %}
+                                    <span class="badge text-bg-success">Income</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger">Expense</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.date }}</td>
+                            <td class="text-end">${{ item.amount|floatformat:2 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4"><div class="empty-state">No transactions yet.</div></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Transaction | Personal Finance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="page-header mb-3">
+            <div class="page-title-wrap">
+                <span class="page-eyebrow">Confirmation</span>
+                <h1 class="page-title text-danger">Delete Transaction</h1>
+                <p class="page-subtitle">This action is permanent and cannot be undone.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body p-4">
+                <p class="mb-4">
+                    Are you sure you want to delete <strong>{{ expense.title }}</strong> (${{ expense.amount|floatformat:2 }})?
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
